@@ -33,7 +33,8 @@ struct result {
 
 int GAP = 30;
 int MISMATCH[4][4] = {{0, 110, 48, 94 },{110, 0, 118, 48}, {48, 118, 0, 110}, {94, 48, 110, 0}};
-map<char, int> INDEX = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3 }};
+//map<char, int> INDEX = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3 }};
+map<char, int> INDEX;
 
 result basic(string part_1, string part_2);
 result generate_alignment(string part_1, string part_2, vector<vector<int>>& opt);
@@ -45,8 +46,8 @@ int main()
 {
 	string line, out, part_1, part_2;
 
-	//ifstream input_file("E:\\CSCI570\\EX1\\UploadedProject\\datapoints\\in15.txt");
-	ifstream input_file("E:\\CSCI570\\EX1\\UploadedProject\\SampleTestCases\\input3.txt");
+	ifstream input_file("E:\\CSCI570\\EX1\\UploadedProject\\datapoints\\in15.txt");
+	//ifstream input_file("E:\\CSCI570\\EX1\\UploadedProject\\SampleTestCases\\input3.txt");
 
 	int flag = 0;
 	if (input_file.is_open()) {
@@ -66,11 +67,24 @@ int main()
 	}
 	cout << part_1 << " " << part_2 << endl;
 
+	INDEX['A'] = 0;
+	INDEX['C'] = 1;
+	INDEX['G'] = 2;
+	INDEX['T'] = 3;
+
+	ofstream output_file;
+
+	output_file.open("out15.txt");
+
 	cout << "basic method:" << endl;
 	result res = basic(part_1, part_2);
 	cout << res.alignment_1 << endl;
 	cout << res.alignment_2 << endl;
 	cout << res.similarity << endl;
+
+	output_file << res.alignment_1 << endl;
+	output_file << res.alignment_2 << endl;
+	output_file << res.similarity << endl;
 
 	cout << "efficient method:" << endl;
 	result res_1 = efficient(part_1, part_2);
@@ -78,6 +92,11 @@ int main()
 	cout << res_1.alignment_2 << endl;
 	cout << res_1.similarity << endl;
 
+	output_file << res_1.alignment_1 << endl;
+	output_file << res_1.alignment_2 << endl;
+	output_file << res_1.similarity << endl;
+
+	output_file.close();
 }
 
 result basic(string part_1, string part_2) {
