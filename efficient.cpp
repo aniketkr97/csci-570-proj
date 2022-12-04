@@ -82,12 +82,87 @@ int main(int argc , char ** argv) {
 	output_file.close();
 }
 
+result basic(string part_1, string part_2) {
+
+	vector<vector<int> > opt(part_1.length() + 1, vector<int>(part_2.length() + 1, 0));
+	// initialization
+	for (int i = 1; i < part_1.length() + 1; i++) {
+		opt[i][0] = GAP * i;
+	}
+	for (int j = 1; j < part_2.length() + 1; j++) {
+		opt[0][j] = GAP * j;
+	}
+
+	// calculate opt
+	for (int i = 1; i < part_1.length() + 1; i++) {
+		for (int j = 1; j < part_2.length() + 1; j++) {
+			opt[i][j] = min(MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt[i - 1][j - 1], min(GAP + opt[i - 1][j], GAP + opt[i][j - 1]));
+		}
+	}
+
+	result res = generate_alignment(part_1, part_2, opt);
+	res.similarity = opt[part_1.length()][part_2.length()];
+
+	return res;
+}
+
+result generate_alignment(string part_1, string part_2, vector<vector<int> >& opt) {
+	string alignment_1 = "";
+	string alignment_2 = "";
+	int i = part_1.length();
+	int j = part_2.length();
+
+	while (i > 0 && j > 0) {
+		if (MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt[i - 1][j - 1] <= GAP + opt[i - 1][j] &&
+			MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt[i - 1][j - 1] <= GAP + opt[i][j - 1]) {
+			alignment_1 += part_1[i - 1];
+			alignment_2 += part_2[j - 1];
+			j--;
+			i--;
+		}
+		else if (GAP + opt[i - 1][j] <= MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt[i - 1][j - 1] &&
+			GAP + opt[i - 1][j] <= GAP + opt[i][j - 1]) {
+			alignment_1 += part_1[i - 1];
+			alignment_2 += "_";
+			i--;
+		}
+		else if (GAP + opt[i][j - 1] <= MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt[i - 1][j - 1] &&
+			GAP + opt[i][j - 1] <= GAP + opt[i - 1][j]) {
+			alignment_1 += "_";
+			alignment_2 += part_2[j - 1];
+			j--;
+		}
+
+	}
+
+	while (i > 0) {
+		alignment_1 += part_1[i - 1];
+		alignment_2 += "_";
+		i--;
+	}
+
+	while (j > 0) {
+		alignment_1 += "_";
+		alignment_2 += part_2[j - 1];
+		j--;
+	}
+
+	// reverse
+	string alignment_1_r(alignment_1.rbegin(), alignment_1.rend());
+	string alignment_2_r(alignment_2.rbegin(), alignment_2.rend());
+
+	result res;
+	res.alignment_1 = alignment_1_r;
+	res.alignment_2 = alignment_2_r;
+	res.similarity = -1;
+	return res;
+}
 
 int find_best_split(string part_1, string part_2) {
 	// here we calculate opt_1 for Xleft and Y first, and then opt_2 for Xright and Y.
 
 	// maintain only two rows to reduce space complexity
-	vector<vector<int> >opt_1 (2, vector<int>(part_2.length() + 1, 0));
+	vector<vector<int> > opt_1 (2, vector<int>(part_2.length() + 1, 0));
 
 	// initialization for opt_1
 	opt_1[1][0] = GAP;
@@ -112,7 +187,7 @@ int find_best_split(string part_1, string part_2) {
 	string part_1_r(part_1.rbegin(), part_1.rend());
 	string part_2_r(part_2.rbegin(), part_2.rend());
 
-	vector<vector<int> >opt_2(2, vector<int>(part_2_r.length() + 1, 0));
+	vector<vector<int> > opt_2(2, vector<int>(part_2_r.length() + 1, 0));
 
 	// initialization for opt_2
 	opt_2[1][0] = GAP;
@@ -167,7 +242,6 @@ result efficient(string part_1, string part_2) {
 
 	return res;
 } 
-
 long getTotalMemory() {
    struct rusage usage;
    int returnCode = getrusage(RUSAGE_SELF, &usage);
@@ -177,5 +251,5 @@ long getTotalMemory() {
        //It should never occur. Check man getrusage for more info to debug.
        // printf("error %d", errno);
 		return -1; 
-	}
+   }
 }
