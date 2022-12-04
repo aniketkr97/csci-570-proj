@@ -27,8 +27,6 @@ struct result {
 	int similarity;
 };
 
-
-
 int GAP = 30;
 int MISMATCH[4][4] = {{0, 110, 48, 94 },{110, 0, 118, 48}, {48, 118, 0, 110}, {94, 48, 110, 0}};
 map<char, int> INDEX;
@@ -84,8 +82,7 @@ int main(int argc , char ** argv) {
 
 result basic(string part_1, string part_2) {
 
-	vector<vector<int> >opt(part_1.length() + 1, vector<int>(part_2.length() + 1, 0));
-
+	vector<vector<int> > opt(part_1.length() + 1, vector<int>(part_2.length() + 1, 0));
 	// initialization
 	for (int i = 1; i < part_1.length() + 1; i++) {
 		opt[i][0] = GAP * i;
@@ -158,8 +155,90 @@ result generate_alignment(string part_1, string part_2, vector<vector<int> >& op
 	res.similarity = -1;
 	return res;
 }
+int find_best_split(string part_1, string part_2) {
+	// here we calculate opt_1 for Xleft and Y first, and then opt_2 for Xright and Y.
 
+	// maintain only two rows to reduce space complexity
+	vector<vector<int> > opt_1 (2, vector<int>(part_2.length() + 1, 0));
 
+	// initialization for opt_1
+	opt_1[1][0] = GAP;
+	for (int j = 1; j < part_2.length() + 1; j++)
+		opt_1[0][j] = GAP * j;
+
+	for (int i = 1; i < part_1.length() / 2 + 1; i++) {
+		// calculate opt_1
+		for (int j = 1; j < part_2.length() + 1; j++) {
+			opt_1[1][j] = min(MISMATCH[INDEX[part_1[i - 1]]][INDEX[part_2[j - 1]]] + opt_1[0][j - 1], min(GAP + opt_1[0][j], GAP + opt_1[1][j - 1]));
+		}
+
+		// move the row
+		for (int j = 0; j < part_2.length() + 1; j++)
+			opt_1[0][j] = opt_1[1][j];
+
+		// initialization
+		opt_1[1][0] = GAP * (i + 1); 
+	}
+
+	// reverse the two strings to calculate opt_2
+	string part_1_r(part_1.rbegin(), part_1.rend());
+	string part_2_r(part_2.rbegin(), part_2.rend());
+
+	vector<vector<int> > opt_2(2, vector<int>(part_2_r.length() + 1, 0));
+
+	// initialization for opt_2
+	opt_2[1][0] = GAP;
+	for (int j = 1; j < part_2_r.length() + 1; j++)
+		opt_2[0][j] = GAP * j;
+
+	for (int i = 1; i < part_1_r.length() - part_1_r.length() / 2 + 1; i++) {
+		// calculate opt_2
+		for (int j = 1; j < part_2_r.length() + 1; j++) {
+			opt_2[1][j] = min(MISMATCH[INDEX[part_1_r[i - 1]]][INDEX[part_2_r[j - 1]]] + opt_2[0][j - 1], min(GAP + opt_2[0][j], GAP + opt_2[1][j - 1]));
+		}
+
+		// move the row
+		for (int j = 0; j < part_2_r.length() + 1; j++)
+			opt_2[0][j] = opt_2[1][j];
+
+		// initialization
+		opt_2[1][0] = GAP * (i + 1);
+	}
+
+	// find the best split index with opt_1 and opt_2
+	int opt_min = INT_MAX;
+	int index = -1;
+
+	for (int i = 0; i < part_2.length() + 1; i++) {
+		if (opt_1[0][i] + opt_2[0][part_2.length() - i] < opt_min) {
+			opt_min = opt_1[0][i] + opt_2[0][part_2.length() - i];
+			index = i;
+		}
+	}
+	return index;
+}
+
+result efficient(string part_1, string part_2) {
+	// if one of the two strings is shorter than 2, just reuse the basic method since it will not use more than 2 rows, which is still efficient
+	if (part_1.length() <= 2 || part_2.length() <= 2)
+		return basic(part_1, part_2);
+
+	// divide
+	int split_1 = part_1.length() / 2;
+	int split_2 = find_best_split(part_1, part_2);
+
+	// solve subproblems
+	result result_1 = efficient(part_1.substr(0, split_1), part_2.substr(0, split_2));
+	result result_2 = efficient(part_1.substr(split_1), part_2.substr(split_2));
+
+	// merge
+	result res;
+	res.alignment_1 = result_1.alignment_1 + result_2.alignment_1;
+	res.alignment_2 = result_1.alignment_2 + result_2.alignment_2;
+	res.similarity = result_1.similarity + result_2.similarity;
+
+	return res;
+}
 long getTotalMemory() {
    struct rusage usage;
    int returnCode = getrusage(RUSAGE_SELF, &usage);
