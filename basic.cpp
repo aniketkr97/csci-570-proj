@@ -9,6 +9,7 @@
 #include <fstream>
 #include <time.h>
 #include <math.h>
+#include <climits>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -243,7 +244,7 @@ long getTotalMemory() {
    struct rusage usage;
    int returnCode = getrusage(RUSAGE_SELF, &usage);
    if(returnCode == 0) {
-       return usage.ru_maxrss/1024;
+       return usage.ru_maxrss;
    } else {
        //It should never occur. Check man getrusage for more info to debug.
        // printf("error %d", errno);
